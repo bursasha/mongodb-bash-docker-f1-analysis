@@ -1,0 +1,64 @@
+# Nationalities of the teams whose drivers scored less than 50 points in total from past races that were not in America, Italy, and Brazil. #
+
+db.raceResult.aggregate([
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$match: { 
+			"race_info.location.country": { $nin: ["America", "Italy", "Brazil"] } 
+		}
+	},
+	{
+		$group: { 
+			_id: "$driver", 
+			total_points: { $sum: "$score" } 
+		}
+	},
+	{
+		$match: { 
+			total_points: { $lt: 50 } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "_id", 
+			foreignField: "name", 
+			as: "driver_info"
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "team", 
+			localField: "driver_info.team", 
+			foreignField: "name", 
+			as: "team_info" 
+		}
+	},
+	{
+		$unwind: "$team_info"
+	},
+	{
+		$group: { 
+			_id: "$team_info.nation" 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			team_nation: "$_id" 
+		}
+	}
+]);

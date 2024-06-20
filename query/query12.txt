@@ -1,0 +1,33 @@
+# Let's assume the ticket price for spectators is $80 everywhere. How much money in $ did fans bring in from races where Sebastian Vettel took 1st place? #
+
+db.raceResult.aggregate([
+	{
+		$match: { 
+			driver: "Sebastian Vettel", 
+			"position.finish_position": 1 
+		}
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$group: { 
+			_id: 0, 
+			total_fan_count: { $sum: "$race_info.fan_count" } 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			total_revenue: { $multiply: ["$total_fan_count", 80] } 
+		}
+	}
+]);

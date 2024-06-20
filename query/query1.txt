@@ -1,0 +1,24 @@
+# The number of races that took place in the rain and with temperatures above 25 degrees, and the total number of fans at them. #
+
+db.race.aggregate([
+	{ 
+		$match: { 
+			"weather.rain": true, 
+			"weather.temperature": { $gt: 25 } 
+		} 
+	},
+	{ 
+		$group: { 
+			_id: 0, 
+			target_race_count: { $sum: 1 }, 
+			target_fan_count: { $sum: "$fan_count" } 
+		} 
+	},
+	{ 
+		$project: { 
+			_id: 0, 
+			target_race_count: 1, 
+			target_fan_count: 1 
+		} 
+	}
+]);

@@ -1,0 +1,44 @@
+# Calculate the average race points for each car engine type for the whole season, rounded to two decimal places, and sort the results in descending order. #
+
+db.raceResult.aggregate([
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "driver", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "car", 
+			localField: "driver_info.team", 
+			foreignField: "team", 
+			as: "car_info" 
+		}
+	},
+	{
+		$unwind: "$car_info"
+	},
+	{
+		$group: { 
+			_id: "$car_info.engine", 
+			avg_race_point: { $avg: "$score" } 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			car_engine: "$_id", 
+			avg_race_point: { $round: ["$avg_race_point", 2] } 
+		}
+	},
+	{
+		$sort: { 
+			avg_race_point: -1 
+		}
+	}
+]);

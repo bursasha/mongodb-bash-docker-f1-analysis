@@ -1,0 +1,70 @@
+# The driver and the director of his team who most frequently finished last in non-rainy races 
+(if there are several, then in alphabetical order based on the city of the team's headquarters). #
+
+db.raceResult.aggregate([
+	{
+		$match: { 
+			"position.finish_position": 20 
+		}
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$match: { 
+			"race_info.weather.rain": false 
+		}
+	},
+	{
+		$group: { 
+			_id: "$driver", 
+			last_place_count: { $sum: 1 } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "_id", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "team", 
+			localField: "driver_info.team", 
+			foreignField: "name", 
+			as: "team_info" 
+		}
+	},
+	{
+		$unwind: "$team_info"
+	},
+	{
+		$sort: { 
+			last_place_count: -1, 
+			"team_info.headquarters_location.city": 1 
+		}
+	},
+	{
+		$limit: 1
+	},
+	{
+		$project: { 
+			_id: 0, 
+			driver: "$_id", 
+			team_director: "$team_info.management.team_director" 
+		}
+	}
+]);

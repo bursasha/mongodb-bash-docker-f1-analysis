@@ -1,0 +1,60 @@
+# Top 2 teams whose drivers earned the fewest points across all races, the names of these teams' cars, and the total points earned on these cars. 
+The final sorting is by the team's name. #
+
+db.raceResult.aggregate([
+	{
+		$group: { 
+			_id: "$driver", 
+			total_score: { $sum: "$score" } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "_id", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$group: { 
+			_id: "$driver_info.team", 
+			total_score: { $sum: "$total_score" } 
+		}
+	},
+	{
+		$sort: { 
+			total_score: 1 
+		}
+	},
+	{
+		$limit: 2 
+	},
+	{
+		$lookup: { 
+			from: "car", 
+			localField: "_id", 
+			foreignField: "team", 
+			as: "car_info" 
+		}
+	},
+	{
+		$unwind: "$car_info"
+	},
+	{
+		$project: {
+			_id: 0, 
+			team: "$_id", 
+			car: "$car_info.name", 
+			total_score: "$total_score" 
+		}
+	},
+	{
+		$sort: { 
+			"team": 1 
+		}
+	}
+]);

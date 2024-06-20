@@ -1,0 +1,110 @@
+# The difference in budgets of the teams that took the most 5th and 7th places in the first 10 races of the season. #
+
+db.raceResult.aggregate([
+	{
+		$match: { 
+			"position.finish_position": { $in: [5, 7] } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$group: { 
+			_id: "$race_info.date", 
+			results: { 
+				$push: { 
+					driver: "$driver", 
+					position: "$position.finish_position" 
+				} 
+			} 
+		}
+	},
+	{
+		$sort: { 
+			"_id": 1 
+		}
+	},
+	{
+		$limit: 10
+	},
+	{
+		$unwind: "$results"
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "results.driver", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$project: { 
+			_id: 0, 
+			team: "$driver_info.team", 
+			position: "$results.position" 
+		}
+	},
+	{
+		$group: { 
+			_id: { 
+				team: "$team", 
+				position: "$position" 
+			}, 
+			position_count: { $sum: 1 } 
+		}
+	},
+	{
+		$sort: { 
+			"_id.position": 1, 
+			position_count: -1, 
+			"_id.team": 1 
+		}
+	},
+	{
+		$group: { 
+			_id: "$_id.position", 
+			team: { $first: "$_id.team" } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "team", 
+			localField: "team", 
+			foreignField: "name", 
+			as: "team_info" 
+		}
+	},
+	{
+		$group: { 
+			_id: 0, 
+			team_budgets: { 
+				$push: "$team_info.season_budget" 
+			} 
+		}
+	},
+	{
+		$project: { 
+			budget_difference: { 
+				$subtract: [
+					{ $arrayElemAt: [ 
+						{ $arrayElemAt: ["$team_budgets", 0] }, 0 ] },
+						{ $arrayElemAt: [ { $arrayElemAt: ["$team_budgets", 1] }, 0 ] }
+				] 
+			}, 
+			_id: 0 
+		}
+	}
+]);

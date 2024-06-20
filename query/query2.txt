@@ -1,0 +1,80 @@
+# Names of the drivers, names of their cars, and names of the technical directors of the drivers' teams who took 3rd place in races with >= 60 laps. #
+
+db.raceResult.aggregate([
+	{ 
+		$match: { 
+			"position.finish_position": 3 
+		} 
+	},
+	{ 
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "track_info" 
+		} 
+	},
+	{ 
+		$unwind: "$track_info" 
+	},
+	{ 
+		$match: { 
+			"track_info.lap_count": { $gte: 60 } 
+		} 
+	},
+	{ 
+		$lookup: { 
+			from: "driver", 
+			localField: "driver", 
+			foreignField: "name", 
+			as: "driver_info" 
+		} 
+	},
+	{ 
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "car", 
+			localField: "driver_info.team", 
+			foreignField: "team", 
+			as: "car_info" 
+		}
+	},
+	{
+		$unwind: "$car_info"
+	},
+	{
+		$lookup: { 
+			from: "team", 
+			localField: "driver_info.team", 
+			foreignField: "name", 
+			as: "team_info" 
+		}
+	},
+	{
+		$unwind: "$team_info"
+	},
+	{
+		$project: { 
+			driver: "$driver_info.name", 
+			car: "$car_info.name", 
+			technical_director: "$team_info.management.technical_director" 
+		}
+	},
+	{
+		$group: { 
+			_id: "$driver", 
+			car: { $first: "$car" }, 
+			technical_director: { $first: "$technical_director" } 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			driver: "$_id", 
+			car: "$car", 
+			technical_director: "$technical_director" 
+		}
+	}
+]);

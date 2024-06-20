@@ -1,0 +1,76 @@
+# For all the drivers who set a race record at least once during the season, display the following data for the race with the fewest laps: 
+full name of the driver, race date, race location (country and city), and the number of points scored in it. #
+
+db.raceResult.aggregate([
+	{
+		$match: { 
+			race_record: { $exists: true } 
+		}
+	},
+	{
+		$group: { 
+			_id: "$driver" 
+		}
+	},
+	{
+		$lookup: { 
+			from: "raceResult", 
+			localField: "_id", 
+			foreignField: "driver", 
+			as: "race_result" 
+		}
+	},
+	{
+		$unwind: "$race_result"
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "race_result.track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$group: { 
+			_id: "$_id", 
+			min_lap_count: { $min: "$race_info.lap_count" } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "min_lap_count", 
+			foreignField: "lap_count", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$lookup: { 
+			from: "raceResult", 
+			localField: "race_info.location.track", 
+			foreignField: "track", 
+			as: "race_result_info" 
+		}
+	},
+	{
+		$unwind: "$race_result_info"
+	},
+	{
+		$project: { 
+			_id: 0, 
+			driver: "$_id", 
+			race: { 
+				date: "$race_info.date", 
+				country: "$race_info.location.country", 
+				city: "$race_info.location.city" }, 
+				score: "$race_result_info.score" 
+		}
+	}
+]);

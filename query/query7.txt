@@ -1,0 +1,17 @@
+# Average number of fans in races with rain and without. #
+
+db.race.aggregate([
+	{
+		$group: { 
+			_id: "$weather.rain", 
+			average_fan_count: { $avg: "$fan_count" } 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			rainy_weather: "$_id", 
+			average_fan_count: "$average_fan_count" 
+		}
+	}
+]);

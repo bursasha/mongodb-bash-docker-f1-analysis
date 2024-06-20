@@ -1,0 +1,71 @@
+# The youngest driver who scored more than 90 points in the first 10 races, as well as the name of his car. #
+
+db.race.aggregate([
+	{
+		$sort: { 
+			date: 1 
+		}
+	},
+	{
+		$limit: 10
+	},
+	{
+		$lookup: { 
+			from: "raceResult", 
+			localField: "location.track", 
+			foreignField: "track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$group: { 
+			_id: "$race_info.driver", 
+			total_score: { $sum: "$race_info.score" } 
+		}
+	},
+	{
+		$match: { 
+			total_score: { $gt: 90 } 
+		}
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "_id", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$sort: { 
+			"driver_info.birthdate": -1 
+		}
+	},
+	{
+		$limit: 1
+	},
+	{
+		$lookup: { 
+			from: "car", 
+			localField: "driver_info.team", 
+			foreignField: "team", 
+			as: "car_info" 
+		}
+	},
+	{
+		$unwind: "$car_info"
+	},
+	{
+		$project: { 
+			_id: 0, 
+			youngest_driver: "$driver_info.name", 
+			car: "$car_info.name" 
+		}
+	}
+]);

@@ -1,0 +1,57 @@
+version: '3.8'
+
+# Persistance volumes:
+volumes:
+
+  config-serverA:
+  config-serverB:
+  config-serverC:
+
+# Network for connection with other servers:
+networks:
+
+  server-network:
+    external: true
+
+# Config servers architecture:
+services:
+
+  config-serverA:
+    image: mongo
+    container_name: config-serverA
+    restart: unless-stopped
+    command: mongod --port 27019 --configsvr --replSet config-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 22001:27019
+    volumes:
+      - config-serverA:/data/db
+      - ../mongo.key:/mongo.key
+      - ./server-script:/server-script
+
+  config-serverB:
+    image: mongo
+    container_name: config-serverB
+    restart: unless-stopped
+    command: mongod --port 27019 --configsvr --replSet config-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 22002:27019
+    volumes:
+      - config-serverB:/data/db
+      - ../mongo.key:/mongo.key
+
+  config-serverC:
+    image: mongo
+    container_name: config-serverC
+    restart: unless-stopped
+    command: mongod --port 27019 --configsvr --replSet config-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 22003:27019
+    volumes:
+      - config-serverC:/data/db
+      - ../mongo.key:/mongo.key

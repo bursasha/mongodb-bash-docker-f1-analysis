@@ -1,0 +1,33 @@
+# The average number of points scored this season by drivers who have never been champions before, 
+and the average number of points scored this season by those who have been champions at least once. #
+
+db.raceResult.aggregate([
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "driver", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$group: { 
+			_id: { 
+				was_champion: { 
+					$cond: { if: { $gte: ["$driver_info.championship_count", 1] }, then: true, else: false } 
+				} 
+			}, 
+			avg_points: { $avg: "$score" } 
+		}
+	},
+	{
+		$project: { 
+			_id: 0, 
+			was_champion: "$_id.was_champion", 
+			avg_points: "$avg_points" 
+		}
+	}
+]);

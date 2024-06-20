@@ -1,0 +1,81 @@
+# Race locations where both drivers from the top 3 teams with the smallest budget finished in positions no lower than 9th. #
+
+db.team.aggregate([
+	{
+		$sort: { 
+			"season_budget": 1 
+		}
+	},
+	{
+		$limit: 3
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "name", 
+			foreignField: "team", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "raceResult", 
+			localField: "driver_info.name", 
+			foreignField: "driver", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$match: { 
+			"race_info.position.finish_position": { $lte: 9 } 
+		}
+	},
+	{
+		$group: { 
+			_id: { 
+				track: "$race_info.track", 
+				team: "$name" 
+			}, 
+			drivers: { 
+				$push: "$driver_info.name" 
+			} 
+		}
+	},
+	{
+		$match: { 
+			"drivers": { $size: 2 } 
+		}
+	},
+	{
+		$group: { 
+			_id: "$_id.track" 
+		}
+	},
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "_id", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$project: {
+			_id: 0, 
+			track: "$_id", 
+			location: { 
+				country: "$race_info.location.country", 
+				city: "$race_info.location.city" 
+			} 
+		}
+	}
+]);

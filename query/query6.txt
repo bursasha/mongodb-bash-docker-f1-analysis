@@ -1,0 +1,71 @@
+# Is there a racer whose car has a power of less than 950hp and who has scored at least 40 points in the last 3 races of the season, 
+specifically on the dates 2018-10-28, 2018-11-11, and 2018-11-25? #
+
+db.raceResult.aggregate([
+	{
+		$lookup: { 
+			from: "race", 
+			localField: "track", 
+			foreignField: "location.track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$match: { 
+			"race_info.date": { 
+				$in: ["2018-10-28", "2018-11-11", "2018-11-25"] 
+			} 
+		}
+	},
+	{
+		$lookup: { 
+			from: "driver", 
+			localField: "driver", 
+			foreignField: "name", 
+			as: "driver_info" 
+		}
+	},
+	{
+		$unwind: "$driver_info"
+	},
+	{
+		$lookup: { 
+			from: "car", 
+			localField: "driver_info.team", 
+			foreignField: "team", 
+			as: "car_info" 
+		}
+	},
+	{
+		$unwind: "$car_info"
+	},
+	{
+		$match: { 
+			"car_info.power": { $lt: 950 } 
+		}
+	},
+	{
+		$group: { 
+			_id: "$driver", 
+			total_score: { $sum: "$score" } 
+		}
+	},
+	{
+		$match: { 
+			"total_score": { $gte: 40 } 
+		}
+	},
+	{
+		$count: "target_driver_count"
+	},
+	{
+		$project: { 
+			target_driver_exists: { 
+				$cond: [{ $gt: ["$target_driver_count", 0] }, true, false] 
+			} 
+		}
+	}
+]);

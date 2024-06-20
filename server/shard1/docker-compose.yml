@@ -1,0 +1,57 @@
+version: '3.8'
+
+# Persistance volumes:
+volumes:
+
+  shard1-serverA:
+  shard1-serverB:
+  shard1-serverC:
+
+# Network for connection with other servers:
+networks:
+
+  server-network:
+    external: true
+
+# Shard1 servers architecture:
+services:
+
+  shard1-serverA:
+    image: mongo
+    container_name: shard1-serverA
+    restart: unless-stopped
+    command: mongod --port 27018 --shardsvr --replSet shard1-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 24001:27018
+    volumes:
+      - shard1-serverA:/data/db
+      - ../mongo.key:/mongo.key
+      - ./server-script:/server-script
+
+  shard1-serverB:
+    image: mongo
+    container_name: shard1-serverB
+    restart: unless-stopped
+    command: mongod --port 27018 --shardsvr --replSet shard1-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 24002:27018
+    volumes:
+      - shard1-serverB:/data/db
+      - ../mongo.key:/mongo.key
+
+  shard1-serverC:
+    image: mongo
+    container_name: shard1-serverC
+    restart: unless-stopped
+    command: mongod --port 27018 --shardsvr --replSet shard1-replica-set --auth --keyFile /mongo.key
+    networks:
+      - server-network
+    ports:
+      - 24003:27018
+    volumes:
+      - shard1-serverC:/data/db
+      - ../mongo.key:/mongo.key

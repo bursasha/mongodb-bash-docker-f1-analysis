@@ -1,0 +1,45 @@
+# The second coldest race and all the starting and finishing positions of the drivers in it. #
+
+db.race.aggregate([
+	{
+		$sort: { 
+			"weather.temperature": 1 
+		}
+	},
+	{
+		$skip: 1
+	},
+	{
+		$limit: 1
+	},
+	{
+		$lookup: { 
+			from: "raceResult", 
+			localField: "location.track", 
+			foreignField: "track", 
+			as: "race_info" 
+		}
+	},
+	{
+		$unwind: "$race_info"
+	},
+	{
+		$group: { 
+			_id: "$location.track", 
+			results: { 
+				$push: { 
+					driver: "$race_info.driver", 
+					start_position: "$race_info.position.start_position", 
+					finish_position: "$race_info.position.finish_position" 
+				}
+			}
+		}
+	},
+	{
+		$project: { 
+			_id: 0,
+			second_coldest_race: "$_id", 
+			results: "$results" 
+		}
+	}
+]);
