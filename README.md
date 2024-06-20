@@ -1,13 +1,18 @@
 # **f1-2018-db MongoDB Replication & Sharding Project** 🏁
 
-### **How To Start?** 🆙
+### **How To Setup Access Rights?** 🗝️
+```bash
+chmod -R 777 ./mongodb-bash-docker-f1-analysis
 ```
+
+### **How To Start?** 🆙
+```bash
 ./run.sh
 docker exec -it mongos bash -c "mongosh --port 27017 --authenticationDatabase admin -u root -p root"
 ```
 
 ### **How To Query?** ⏩️
-```
+```bash
 use f1-2018-db;
 ( if needs authentication: db.auth("root", "root"); )
 ... query ...
@@ -21,9 +26,31 @@ password: basic
 ```
 
 ### **How To Stop The System?** ⏸️
-```
+```bash
 ./stop.sh
 ```
+
+---
+
+### **Project Structure** 📁
+- `db/`: Contains database initialization scripts and data.
+    - `collection/`: Initialization scripts for various collections.
+    - `data/`: Data files for initializing the collections.
+    - `query/`: Query files for interacting with the database.
+
+- `server/`: Contains server configuration and setup scripts.
+    - `config/`: Configuration files and scripts for the config servers.
+        - `server-script/`: Scripts for server configuration.
+    - `router/`: Configuration and setup for the router server.
+        - `server-script/`: Scripts for the router server.
+    - `shard1/`: Configuration and setup for the shard server.
+      - `server-script/`: Scripts for the shard server.
+
+- `README.md`: The main README file for the project.
+- `run.sh`: Script to start the system.
+- `stop.sh`: Script to stop the system.
+
+---  
 
 ### **Database Selection Rationale for F1 2018 Season Data Management Project** 🏎️
 My project involves the management and analysis of data for the Formula 1 2018 season, and I foresee the following use cases and justification for selecting MongoDB as the database:
